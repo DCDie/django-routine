@@ -24,11 +24,14 @@ class CreateFile:
         view = open(self.path.joinpath('views.py'), 'w+')
         view.write(f"from rest_framework.viewsets import GenericViewSet\n\n\n"
                    f"class {self.name.capitalize()}ViewSet(GenericViewSet):\n"
-                   f"    pass\n")
+                   f"    serializer_class = {self.name.capitalize()}Serializer\n"
+                   f"    queryset = {self.name.capitalize()}.objects.all()\n")
 
     def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
-        model.write(f"from django.db import models\n\n\n"
+        model.write(f"from django.db import models\n\n"
+                    f"from apps.{self.name}.models import {self.name.capitalize()}\n"
+                    f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
                     f"class {self.name.capitalize()}(models.Model):\n"
                     f"    created_at = models.DateTimeField(auto_now_add=True)\n"
                     f"    updated_at = models.DateTimeField(auto_now=True)\n\n"
