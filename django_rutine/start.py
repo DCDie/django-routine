@@ -22,21 +22,29 @@ class CreateFile:
 
     def start_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
-        view.write(f'from rest_framework.viewsets import GenericViewSet\n\n\nclass {self.name.capitalize()}ViewSet('
-                   f'GenericViewSet):\n    pass\n')
+        view.write(f"from rest_framework.viewsets import GenericViewSet\n\n\n"
+                   f"class {self.name.capitalize()}ViewSet(GenericViewSet):\n"
+                   f"    pass\n")
 
     def start_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
-        model.write(f'from django.db import models\n\n\n'
-                    f'class {self.name.capitalize()}(models.Model):\n'
-                    f'    created_at = models.DateTimeField(auto_now_add=True)\n'
-                    f'    updated_at = models.DateTimeField(auto_now=True)\n\n'
-                    f'    class Meta:\n'
-                    f'        abstract = True\n')
+        model.write(f"from django.db import models\n\n\n"
+                    f"class {self.name.capitalize()}(models.Model):\n"
+                    f"    created_at = models.DateTimeField(auto_now_add=True)\n"
+                    f"    updated_at = models.DateTimeField(auto_now=True)\n\n"
+                    f"    class Meta:\n"
+                    f"        abstract = True\n")
+
+    def start_apps(self):
+        os.mkdir(f"apps/{self.name}")
+        os.system(f"django-admin startapp {self.name} apps/{self.name}")
+        apps = open(self.path.joinpath("apps.py"), "w+")
+        apps.write(f"from django.apps import AppConfig\n\n\n"
+                   f"class {self.name.capitalize}Config(AppConfig):\n"
+                   f"    default_auto_field = 'django.db.models.BigAutoField'\n"
+                   f"    name = 'apps.{self.name}'")
 
     def start_app(self):
-        os.mkdir(f'apps/{self.name}')
-        os.system(f'django-admin startapp {self.name} apps/{self.name}')
         self.start_serializer()
         self.start_model()
         self.start_views()
