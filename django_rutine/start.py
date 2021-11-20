@@ -40,7 +40,7 @@ class CreateFile:
         os.system(f"django-admin startapp {self.name} apps/{self.name}")
         apps = open(self.path.joinpath("apps.py"), "w+")
         apps.write(f"from django.apps import AppConfig\n\n\n"
-                   f"class {self.name.capitalize}Config(AppConfig):\n"
+                   f"class {self.name.capitalize()}Config(AppConfig):\n"
                    f"    default_auto_field = 'django.db.models.BigAutoField'\n"
                    f"    name = 'apps.{self.name}'")
 
