@@ -42,7 +42,7 @@ class CreateFile:
         apps.write(f"from django.apps import AppConfig\n\n\n"
                    f"class {self.name.capitalize()}Config(AppConfig):\n"
                    f"    default_auto_field = 'django.db.models.BigAutoField'\n"
-                   f"    name = 'apps.{self.name}'")
+                   f"    name = 'apps.{self.name}'\n")
 
     def main(self):
         self.create_apps()
