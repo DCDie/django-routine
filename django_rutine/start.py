@@ -60,6 +60,4 @@ def start():
             if arg != sys.argv[0]:
                 path = Path('apps').absolute().joinpath(arg)
                 CreateFile(path=path, name=arg).main()
-    os.system('python manage.py makemigrations')
-    os.system('python manage.py migrate')
-    os.system('python manage.py runserver')
+    os.system('echo All is done, my Captain!')
