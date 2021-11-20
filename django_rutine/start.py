@@ -8,7 +8,7 @@ class CreateFile:
         self.path = path
         self.name = name
 
-    def start_serializer(self):
+    def create_serializer(self):
         serializer = open(self.path.joinpath('serializers.py'), 'w+')
         serializer.write(f"from rest_framework import serializers\n"
                          f"from apps.{self.name}.models import *\n\n\n"
@@ -17,16 +17,16 @@ class CreateFile:
                          f"        model = {self.name.capitalize()}\n"
                          f"        fields = '__all__'\n")
 
-    def start_urls(self):
+    def create_urls(self):
         open(self.path.joinpath('urls.py'), 'w+').close()
 
-    def start_views(self):
+    def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
         view.write(f"from rest_framework.viewsets import GenericViewSet\n\n\n"
                    f"class {self.name.capitalize()}ViewSet(GenericViewSet):\n"
                    f"    pass\n")
 
-    def start_model(self):
+    def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
         model.write(f"from django.db import models\n\n\n"
                     f"class {self.name.capitalize()}(models.Model):\n"
@@ -35,7 +35,7 @@ class CreateFile:
                     f"    class Meta:\n"
                     f"        abstract = True\n")
 
-    def start_apps(self):
+    def create_apps(self):
         os.mkdir(f"apps/{self.name}")
         os.system(f"django-admin startapp {self.name} apps/{self.name}")
         apps = open(self.path.joinpath("apps.py"), "w+")
@@ -44,11 +44,12 @@ class CreateFile:
                    f"    default_auto_field = 'django.db.models.BigAutoField'\n"
                    f"    name = 'apps.{self.name}'")
 
-    def start_app(self):
-        self.start_serializer()
-        self.start_model()
-        self.start_views()
-        self.start_urls()
+    def main(self):
+        self.create_apps()
+        self.create_serializer()
+        self.create_model()
+        self.create_views()
+        self.create_urls()
 
 
 def start():
@@ -58,7 +59,7 @@ def start():
         for arg in sys.argv:
             if arg != sys.argv[0]:
                 path = Path('apps').absolute().joinpath(arg)
-                CreateFile(path=path, name=arg).start_app()
+                CreateFile(path=path, name=arg).main()
     os.system('python manage.py makemigrations')
     os.system('python manage.py migrate')
     os.system('python manage.py runserver')
