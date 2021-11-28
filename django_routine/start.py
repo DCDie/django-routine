@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 
-class CreateFile:
+class CreateFiles:
     def __init__(self, path=None, name=None):
         self.path = path
         self.name = name
@@ -18,7 +18,12 @@ class CreateFile:
                          f"        fields = '__all__'\n")
 
     def create_urls(self):
-        open(self.path.joinpath('urls.py'), 'w+').close()
+        urls = open(self.path.joinpath('urls.py'), 'w+')
+        urls.write(f"from rest_framework import routers\n"
+                   f"from apps.{self.name}.views import {self.name.capitalize()}ViewSet\n\n"
+                   f"router = routers.SimpleRouter(trailing_slash=False)\n\n\n"
+                   f"router.register(r'{self.name}', {self.name.capitalize()}ViewSet, basename='{self.name}')\n\n"
+                   f"urlpatterns = [\n    *router.urls,\n]\n")
 
     def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
@@ -34,9 +39,7 @@ class CreateFile:
         model.write(f"from django.db import models\n\n\n"
                     f"class {self.name.capitalize()}(models.Model):\n"
                     f"    created_at = models.DateTimeField(auto_now_add=True)\n"
-                    f"    updated_at = models.DateTimeField(auto_now=True)\n\n"
-                    f"    class Meta:\n"
-                    f"        abstract = True\n")
+                    f"    updated_at = models.DateTimeField(auto_now=True)\n")
 
     def create_apps(self):
         os.mkdir(f"apps/{self.name}")
@@ -55,6 +58,33 @@ class CreateFile:
         self.create_urls()
 
 
+class UpdateFiles:
+    def __init__(self, path=None, name=None):
+        self.path = path
+        self.name = name
+
+    def update_urls(self):
+        urls = open('config/urls.py', 'w+')
+        urls.write(f"from django.contrib import admin\n"
+                   f"from django.urls import path, include\n"
+                   f"from rest_framework import permissions\n"
+                   f"from drf_yasg.views import get_schema_view\n"
+                   f"from drf_yasg import openapi\n\n"
+                   f"schema_view = get_schema_view(\n"
+                   f"    openapi.Info(\n"
+                   f"        title='Project API',\n"
+                   f"        default_version='v1',\n"
+                   f"    ),\n"
+                   f"    public=True,\n"
+                   f"    permission_classes=(permissions.AllowAny,),\n"
+                   f")\n\n"
+                   f"urlpatterns = [\n"
+                   f"    path('admin/', admin.site.urls),\n"
+                   f"    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
+                   f"    name='schema-swagger-ui'),\n"
+                   f"]\n")
+
+
 def start():
     os.system('django-admin startproject config .')
     os.mkdir('apps')
@@ -62,5 +92,5 @@ def start():
         for arg in sys.argv:
             if arg != sys.argv[0]:
                 path = Path('apps').absolute().joinpath(arg)
-                CreateFile(path=path, name=arg).main()
+                CreateFiles(path=path, name=arg).main()
     os.system('echo All is done, my Captain!')

@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.0.3.3.2'
+version = '0.0.4.4'
 
 setup(
     name='django-routine',
@@ -11,9 +11,9 @@ setup(
     packages=['django_routine'],
     entry_points={
         "console_scripts": [
-            "startapp = django_routine.start:start",
+            "startproject = django_routine.start:start",
 
         ]
     },
-    install_requires=['djangorestframework', 'django'],
+    install_requires=['djangorestframework', 'django', 'django-rest-swagger', 'drf_yasg'],
 )
