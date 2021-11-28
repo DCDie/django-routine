@@ -27,10 +27,13 @@ class CreateFiles:
 
     def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
-        view.write(f"from rest_framework.viewsets import GenericViewSet\n\n"
+        view.write(f"from rest_framework.mixins import RetrieveModelMixin, ListModelMixin, CreateModelMixin, "
+                   f"UpdateModelMixin, DestroyModelMixin\n"
+                   f"from rest_framework.viewsets import GenericViewSet\n\n"
                    f"from apps.{self.name}.models import {self.name.capitalize()}\n"
                    f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
-                   f"class {self.name.capitalize()}ViewSet(GenericViewSet):\n"
+                   f"class {self.name.capitalize()}ViewSet(RetrieveModelMixin, ListModelMixin, CreateModelMixin, "
+                   f"UpdateModelMixin, DestroyModelMixin, GenericViewSet):\n"
                    f"    serializer_class = {self.name.capitalize()}Serializer\n"
                    f"    queryset = {self.name.capitalize()}.objects.all()\n")
 
@@ -81,16 +84,56 @@ class UpdateFiles:
                    f"urlpatterns = [\n"
                    f"    path('admin/', admin.site.urls),\n"
                    f"    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
-                   f"    name='schema-swagger-ui'),\n"
+                   f"        name='schema-swagger-ui'),\n"
                    f"]\n")
+
+    def add_installed_apps(self, apps):
+        with open('config/settings.py') as settings:
+            data = settings.read()
+        settings.close()
+
+        list = data.split('\n')
+        for i in range(len(list)):
+            if list[i] == 'INSTALLED_APPS = [':
+                for app in apps:
+                    list.insert(i+1, f"    \'{app}\',")
+                    i += 1
+
+        with open('config/settings.py', 'w') as settings:
+            for line in list:
+                settings.write(line + '\n')
+
+    def add_urls(self, apps):
+
+        with open('config/urls.py') as urls:
+            data = urls.read()
+        urls.close()
+
+        list = data.split('\n')
+
+        for i in range(len(list)):
+            if list[i] == 'urlpatterns = [':
+                for app in apps:
+                    list.insert(i + 1, f"    path('{app.split('.')[-1]}s/', include('{app}.urls')),")
+                    i += 1
+
+        with open('config/urls.py', 'w') as urls:
+            for line in list:
+                urls.write(line + '\n')
 
 
 def start():
     os.system('django-admin startproject config .')
     os.mkdir('apps')
+    standard = ['drf_yasg', 'rest_framework_swagger']
+    apps = []
+    UpdateFiles().update_urls()
     if len(sys.argv):
         for arg in sys.argv:
             if arg != sys.argv[0]:
                 path = Path('apps').absolute().joinpath(arg)
                 CreateFiles(path=path, name=arg).main()
+                apps.append(f"apps.{arg}")
+    UpdateFiles().add_installed_apps([*standard, *apps])
+    UpdateFiles().add_urls(apps)
     os.system('echo All is done, my Captain!')
