@@ -36,10 +36,9 @@ class CreateFiles:
 
     def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
-        model.write(f"from django.db import models\n\n\n"
-                    f"class {self.name.capitalize()}(models.Model):\n"
-                    f"    created_at = models.DateTimeField(auto_now_add=True)\n"
-                    f"    updated_at = models.DateTimeField(auto_now=True)\n")
+        model.write(f"from apps.common.models import BaseModel\n\n\n"
+                    f"class {self.name.capitalize()}(BaseModel):\n"
+                    f"    pass\n")
 
     def create_apps(self):
         os.mkdir(f"apps/{self.name}")
@@ -49,6 +48,23 @@ class CreateFiles:
                    f"class {self.name.capitalize()}Config(AppConfig):\n"
                    f"    default_auto_field = 'django.db.models.BigAutoField'\n"
                    f"    name = 'apps.{self.name}'\n")
+
+    def add_common_app(self):
+        os.mkdir("apps/common")
+        os.system("django-admin startapp common apps/common")
+        apps = open("apps/common/apps.py", "w+")
+        apps.write(f"from django.apps import AppConfig\n\n\n"
+                   f"class CommonConfig(AppConfig):\n"
+                   f"    default_auto_field = 'django.db.models.BigAutoField'\n"
+                   f"    name = 'apps.common'\n")
+
+        models = open("apps/common/models.py", "w+")
+        models.write("from django.db import models\n\n\n"
+                     "class BaseModel(models.Model):\n"
+                     "    created_at = models.DateTimeField(auto_now_add=True)\n"
+                     "    updated_at = models.DateTimeField(auto_now=True)\n\n"
+                     "    class Meta:\n"
+                     "        abstract = True\n")
 
     def main(self):
         self.create_apps()
@@ -71,7 +87,6 @@ class UpdateFiles:
                    f"from rest_framework_simplejwt.views import (\n"
                    f"    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
                    f")\n"
-                   f"from rest_framework import permissions\n"
                    f"from drf_yasg.views import get_schema_view\n"
                    f"from drf_yasg import openapi\n\n"
                    f"schema_view = get_schema_view(\n"
@@ -85,10 +100,12 @@ class UpdateFiles:
                    f"urlpatterns = [\n"
                    f"    path('admin/', admin.site.urls),\n"
                    f"    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
-                   f"        name='schema-swagger-ui'),\n"
-                   f"    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),\n"
-                   f"    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),\n"
-                   f"    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),\n"
+                   f"         name='schema-swagger-ui'),\n"
+                   f"    path('jwt/', include([\n"
+                   f"        path('token/', TokenObtainPairView.as_view(), name='token_obtain-pair'),\n"
+                   f"        path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),\n"
+                   f"        path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),\n"
+                   f"    ])),\n"
                    f"]\n")
 
     def add_installed_apps(self, apps):
@@ -107,7 +124,7 @@ class UpdateFiles:
             for line in list:
                 settings.write(line + '\n')
 
-    def add_rest_config(self):
+    def extend_config(self):
         with open('config/settings.py') as settings:
             data = settings.read()
         settings.close()
@@ -115,14 +132,36 @@ class UpdateFiles:
         list = data.split('\n')
 
         for i in range(len(list)):
-            if list[i] == 'DEFAULT_AUTO_FIELD =':
-                list.insert(i+2, "REST_FRAMEWORK = {\n"
-                            "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
-                            "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
-                            "    )\n"
-                            "}\n"
+            if list[i] == "from pathlib import Path":
+                list.insert(i + 1, "\nfrom datetime import timedelta\n")
+
+            if list[i] == "DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'":
+                list.insert(i + 2, "REST_FRAMEWORK = {\n"
+                                   "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
+                                   "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
+                                   "        'rest_framework.authentication.SessionAuthentication',\n"
+                                   "    )\n"
+                                   "}\n\n\n"
+                                   "SIMPLE_JWT = {\n"
+                                   "    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),\n"
+                                   "    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),\n"
+                                   "    'AUTH_HEADER_TYPES': ('Bearer',),\n"
+                                   "    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',\n"
+                                   " }\n\n\n"
+                                   "SWAGGER_SETTINGS = {\n"
+                                   "    'SECURITY_DEFINITIONS': {\n"
+                                   "         'Token': {\n"
+                                   "            'type': 'apiKey',\n"
+                                   "            'name': 'Authorization',\n"
+                                   "            'in': 'header'\n"
+                                   "        }\n"
+                                   "    }\n"
+                                   "}\n"
 
                             )
+        with open('config/settings.py', 'w') as settings:
+            for line in list:
+                settings.write(line + '\n')
 
     def add_urls(self, apps):
 
@@ -135,7 +174,7 @@ class UpdateFiles:
         for i in range(len(list)):
             if list[i] == 'urlpatterns = [':
                 for app in apps:
-                    list.insert(i + 1, f"    path('{app.split('.')[-1]}s/', include('{app}.urls')),")
+                    list.insert(i + 1, f"    path('{app.split('.')[-1]}/', include('{app}.urls')),")
                     i += 1
 
         with open('config/urls.py', 'w') as urls:
@@ -146,17 +185,17 @@ class UpdateFiles:
 def start():
     os.system('django-admin startproject config .')
     os.mkdir('apps')
-    standard = ['drf_yasg', 'rest_framework_swagger', 'djangorestframework-simplejwt']
+    standard = ['drf_yasg', 'rest_framework_swagger', 'rest_framework_simplejwt', 'apps.common']
     apps = []
     UpdateFiles().update_urls()
+    CreateFiles().add_common_app()
     if len(sys.argv):
         for arg in sys.argv:
             if arg != sys.argv[0]:
                 path = Path('apps').absolute().joinpath(arg)
                 CreateFiles(path=path, name=arg).main()
                 apps.append(f"apps.{arg}")
-    apps.append(f"rest_framework_simplejwt")
     UpdateFiles().add_installed_apps([*standard, *apps])
-    UpdateFiles().add_rest_config()
+    UpdateFiles().extend_config()
     UpdateFiles().add_urls(apps)
     os.system('echo All is done, my Captain!')
