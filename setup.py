@@ -17,6 +17,6 @@ if __name__ == '__main__':
             ]
         },
         install_requires=['djangorestframework', 'django', 'django-rest-swagger', 'drf_yasg',
-                          'djangorestframework-simplejwt',
+                          'djangorestframework-simplejwt', 'django-filters',
                           ],
     )

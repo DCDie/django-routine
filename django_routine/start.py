@@ -32,7 +32,11 @@ class CreateFiles:
                    f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
                    f"class {self.name.capitalize()}ViewSet(ModelViewSet):\n"
                    f"    serializer_class = {self.name.capitalize()}Serializer\n"
-                   f"    queryset = {self.name.capitalize()}.objects.all()\n")
+                   f"    queryset = {self.name.capitalize()}.objects.all()\n"
+                   f"    ordering = '-updated_at'\n"
+                   f"    filterset_fields = '__all__'\n"
+                   f"    search_fields = '__all__'\n"
+                   )
 
     def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
@@ -140,7 +144,13 @@ class UpdateFiles:
                                    "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
                                    "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
                                    "        'rest_framework.authentication.SessionAuthentication',\n"
-                                   "    )\n"
+                                   "    ),\n"
+                                   "    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',\n"
+                                   "    'PAGE_SIZE': 20,\n"
+                                   "    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',\n"
+                                   "                                'rest_framework.filters.SearchFilter',\n"
+                                   "                                'rest_framework.filters.OrderingFilter',\n"
+                                   "                                ],\n"
                                    "}\n\n\n"
                                    "SIMPLE_JWT = {\n"
                                    "    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),\n"
@@ -185,7 +195,7 @@ class UpdateFiles:
 def start():
     os.system('django-admin startproject config .')
     os.mkdir('apps')
-    standard = ['drf_yasg', 'rest_framework_swagger', 'rest_framework_simplejwt', 'apps.common']
+    standard = ['rest_framework', 'drf_yasg', 'rest_framework_swagger', 'rest_framework_simplejwt', 'django_filters', 'apps.common']
     apps = []
     UpdateFiles().update_urls()
     CreateFiles().add_common_app()
