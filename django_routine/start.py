@@ -27,13 +27,10 @@ class CreateFiles:
 
     def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
-        view.write(f"from rest_framework.mixins import RetrieveModelMixin, ListModelMixin, CreateModelMixin, "
-                   f"UpdateModelMixin, DestroyModelMixin\n"
-                   f"from rest_framework.viewsets import GenericViewSet\n\n"
+        view.write(f"from rest_framework.viewsets import ModelViewSet\n\n"
                    f"from apps.{self.name}.models import {self.name.capitalize()}\n"
                    f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
-                   f"class {self.name.capitalize()}ViewSet(RetrieveModelMixin, ListModelMixin, CreateModelMixin, "
-                   f"UpdateModelMixin, DestroyModelMixin, GenericViewSet):\n"
+                   f"class {self.name.capitalize()}ViewSet(ModelViewSet):\n"
                    f"    serializer_class = {self.name.capitalize()}Serializer\n"
                    f"    queryset = {self.name.capitalize()}.objects.all()\n")
 
@@ -71,6 +68,8 @@ class UpdateFiles:
         urls.write(f"from django.contrib import admin\n"
                    f"from django.urls import path, include\n"
                    f"from rest_framework import permissions\n"
+                   f"from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView\n"
+                   f"from rest_framework import permissions\n"
                    f"from drf_yasg.views import get_schema_view\n"
                    f"from drf_yasg import openapi\n\n"
                    f"schema_view = get_schema_view(\n"
@@ -85,6 +84,9 @@ class UpdateFiles:
                    f"    path('admin/', admin.site.urls),\n"
                    f"    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
                    f"        name='schema-swagger-ui'),\n"
+                   f"    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),\n"
+                   f"    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),\n"
+                   f"    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),\n"
                    f"]\n")
 
     def add_installed_apps(self, apps):
@@ -94,7 +96,7 @@ class UpdateFiles:
 
         list = data.split('\n')
         for i in range(len(list)):
-            if list[i] == 'INSTALLED_APPS = [':
+            if list[i] == '     django.contrib.staticfiles,':
                 for app in apps:
                     list.insert(i+1, f"    \'{app}\',")
                     i += 1
@@ -102,6 +104,23 @@ class UpdateFiles:
         with open('config/settings.py', 'w') as settings:
             for line in list:
                 settings.write(line + '\n')
+
+    def add_rest_config(self):
+        with open('config/settings') as settings:
+            data = settings.read()
+        settings.close()
+
+        list = data.split('\n')
+
+        for i in range(len(list)):
+            if list[i] == 'DEFAULT_AUTO_FIELD =':
+                list.insert(i+2, "REST_FRAMEWORK = {\n"
+                            "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
+                            "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
+                            "    )\n"
+                            "}\n"
+
+                            )
 
     def add_urls(self, apps):
 
@@ -125,7 +144,7 @@ class UpdateFiles:
 def start():
     os.system('django-admin startproject config .')
     os.mkdir('apps')
-    standard = ['drf_yasg', 'rest_framework_swagger']
+    standard = ['drf_yasg', 'rest_framework_swagger', 'djangorestframework-simplejwt']
     apps = []
     UpdateFiles().update_urls()
     if len(sys.argv):
@@ -134,6 +153,8 @@ def start():
                 path = Path('apps').absolute().joinpath(arg)
                 CreateFiles(path=path, name=arg).main()
                 apps.append(f"apps.{arg}")
+    apps.append(f"rest_framework_simplejwt")
     UpdateFiles().add_installed_apps([*standard, *apps])
+    UpdateFiles().add_rest_config()
     UpdateFiles().add_urls(apps)
     os.system('echo All is done, my Captain!')

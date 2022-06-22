@@ -15,5 +15,7 @@ setup(
 
         ]
     },
-    install_requires=['djangorestframework', 'django', 'django-rest-swagger', 'drf_yasg'],
+    install_requires=['djangorestframework', 'django', 'django-rest-swagger', 'drf_yasg',
+                      'djangorestframework-simplejwt',
+                      ],
 )
