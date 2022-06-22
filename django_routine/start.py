@@ -68,7 +68,9 @@ class UpdateFiles:
         urls.write(f"from django.contrib import admin\n"
                    f"from django.urls import path, include\n"
                    f"from rest_framework import permissions\n"
-                   f"from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView\n"
+                   f"from rest_framework_simplejwt.views import (\n"
+                   f"    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
+                   f")\n"
                    f"from rest_framework import permissions\n"
                    f"from drf_yasg.views import get_schema_view\n"
                    f"from drf_yasg import openapi\n\n"
@@ -96,7 +98,7 @@ class UpdateFiles:
 
         list = data.split('\n')
         for i in range(len(list)):
-            if list[i] == '     django.contrib.staticfiles,':
+            if list[i] == "    'django.contrib.staticfiles',":
                 for app in apps:
                     list.insert(i+1, f"    \'{app}\',")
                     i += 1
@@ -106,7 +108,7 @@ class UpdateFiles:
                 settings.write(line + '\n')
 
     def add_rest_config(self):
-        with open('config/settings') as settings:
+        with open('config/settings.py') as settings:
             data = settings.read()
         settings.close()
 
