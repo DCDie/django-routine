@@ -13,10 +13,13 @@ if __name__ == '__main__':
         entry_points={
             "console_scripts": [
                 "startproject = django_routine.start:start",
-
             ]
         },
-        install_requires=['djangorestframework', 'django', 'django-rest-swagger', 'drf_yasg',
-                          'djangorestframework-simplejwt',
-                          ],
+        install_requires=[
+            'djangorestframework',
+            'django',
+            'django-rest-swagger',
+            'drf_yasg',
+            'djangorestframework-simplejwt',
+        ],
     )
