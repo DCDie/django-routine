@@ -11,6 +11,10 @@ Install using pip
 
 `pip install django-routine`
 
+## Usage
+
+`startproject <app_name> <app_name>`
+
 ## P.S.
 
 If you find bugs, need help, or want to talk to the developers, please write an issue on [GitHub](https://github.com/DCDie/azure-transcribe/issues).
