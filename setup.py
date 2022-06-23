@@ -21,5 +21,6 @@ if __name__ == '__main__':
             'django-rest-swagger',
             'drf_yasg',
             'djangorestframework-simplejwt',
+            'django-filters',
         ],
     )
