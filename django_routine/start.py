@@ -40,7 +40,8 @@ class CreateFiles:
 
     def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
-        model.write(f"from apps.common.models import BaseModel\n\n\n"
+        model.write(f"from django.db import models\n\n"
+                    f"from apps.common.models import BaseModel\n\n\n"
                     f"class {self.name.capitalize()}(BaseModel):\n"
                     f"    pass\n")
 
