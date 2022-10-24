@@ -11,7 +11,7 @@ class CreateFiles:
     def create_serializer(self):
         serializer = open(self.path.joinpath('serializers.py'), 'w+')
         serializer.write(
-            f"from rest_framework import serializers\n"
+            f"from rest_framework import serializers\n\n"
             f"from apps.{self.name}.models import *\n\n\n"
             f"class {self.name.capitalize()}Serializer(serializers.ModelSerializer):\n"
             f"    class Meta:\n"
@@ -29,10 +29,46 @@ class CreateFiles:
             f"    fields = ('created_at', 'updated_at')\n"
         )
 
+    def create_test(self):
+        test = open(self.path.joinpath('tests.py'), 'w+')
+        test.write(
+            f"from django.test import TestCase\n"
+            f"from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n\n"
+            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
+            f"class {self.name.capitalize()}Test(TestCase):\n"
+            f"    def setUp(self) -> None:\n"
+            "        pass\n\n"
+            f"    def test_{self.name}_list(self):\n"
+            f"        response = self.client.get('/{self.name}/{self.name}/')\n"
+            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            f"    def test_{self.name}_create(self):\n"
+            "        data = {}\n"
+            f"        response = self.client.post('/{self.name}/{self.name}/', data=data)\n"
+            f"        self.assertEqual(response.status_code, HTTP_201_CREATED)\n\n"
+            f"    def test_{self.name}_retrieve(self):\n"
+            f"        {self.name}_instance = {self.name.capitalize()}.objects.first()\n"
+            f"        response = self.client.get(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}/')\n"
+            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            f"    def test_{self.name}_update(self):\n"
+            f"        {self.name}_instance = {self.name.capitalize()}.objects.first()\n"
+            "        data = {}\n"
+            f"        response = self.client.put(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}/', data=data)\n"
+            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            f"    def test_{self.name}_partial_update(self):\n"
+            f"        {self.name}_instance = {self.name.capitalize()}.objects.first()\n"
+            "        data = {}\n"
+            f"        response = self.client.patch(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}/', data=data)\n"
+            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            f"    def test_{self.name}_destroy(self):\n"
+            f"        {self.name}_instance = {self.name.capitalize()}.objects.first()\n"
+            f"        response = self.client.delete(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}/')\n"
+            f"        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)\n"
+        )
+
     def create_urls(self):
         urls = open(self.path.joinpath('urls.py'), 'w+')
         urls.write(
-            f"from rest_framework import routers\n"
+            f"from rest_framework import routers\n\n"
             f"from apps.{self.name}.views import {self.name.capitalize()}ViewSet\n\n"
             f"router = routers.SimpleRouter(trailing_slash=False)\n\n\n"
             f"router.register(r'{self.name}', {self.name.capitalize()}ViewSet, basename='{self.name}')\n\n"
@@ -84,6 +120,7 @@ class CreateFiles:
         models.write(
             "from django.db import models\n\n\n"
             "class BaseModel(models.Model):\n"
+            "    objects = models.Manager()\n"
             "    created_at = models.DateTimeField(auto_now_add=True)\n"
             "    updated_at = models.DateTimeField(auto_now=True)\n\n"
             "    class Meta:\n"
@@ -92,6 +129,7 @@ class CreateFiles:
     def main(self):
         self.create_apps()
         self.create_serializer()
+        self.create_test()
         self.create_admin()
         self.create_model()
         self.create_views()
