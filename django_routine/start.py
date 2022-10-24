@@ -18,6 +18,17 @@ class CreateFiles:
             f"        model = {self.name.capitalize()}\n"
             f"        fields = '__all__'\n")
 
+    def create_admin(self):
+        admin = open(self.path.joinpath('admin.py'), 'w+')
+        admin.write(
+            f"from django.contrib import admin\n\n"
+            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
+            f"@admin.register({self.name.capitalize()})\n"
+            f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
+            f"    list_display = ('id', 'created_at', 'updated_at')\n"
+            f"    fields = ('created_at', 'updated_at')\n"
+        )
+
     def create_urls(self):
         urls = open(self.path.joinpath('urls.py'), 'w+')
         urls.write(
@@ -81,6 +92,7 @@ class CreateFiles:
     def main(self):
         self.create_apps()
         self.create_serializer()
+        self.create_admin()
         self.create_model()
         self.create_views()
         self.create_urls()
@@ -208,7 +220,7 @@ class UpdateFiles:
 
 def start():
     os.system('django-admin startproject config .')
-    os.mkdir('apps')
+    os.makedirs('apps', exist_ok=True)
     standard = [
         'rest_framework',
         'drf_yasg',
