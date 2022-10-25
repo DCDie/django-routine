@@ -128,7 +128,7 @@ class CreateFiles:
             "from django.contrib import admin\n\n"
             "from apps.common.models import BaseModel\n\n\n"
             "def get_model_fields(model=BaseModel):\n"
-            f"    return [field.name for field in model._meta.get_fields()]\n"
+            "    return [field.name for field in model._meta.get_fields()]\n"
         )
 
     def main(self):
