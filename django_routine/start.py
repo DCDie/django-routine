@@ -23,10 +23,11 @@ class CreateFiles:
         admin.write(
             f"from django.contrib import admin\n\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
+            "def get_model_fields():\n"
+            f"    return [field.name for field in {self.name.capitalize()}._meta.get_fields()]\n\n\n"
             f"@admin.register({self.name.capitalize()})\n"
             f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
-            f"    list_display = ('id', 'created_at', 'updated_at')\n"
-            f"    fields = ('created_at', 'updated_at')\n"
+            f"    list_display = get_model_fields()\n"
         )
 
     def create_test(self):
