@@ -22,12 +22,11 @@ class CreateFiles:
         admin = open(self.path.joinpath('admin.py'), 'w+')
         admin.write(
             "from django.contrib import admin\n\n"
-            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
-            "def get_model_fields():\n"
-            f"    return [field.name for field in {self.name.capitalize()}._meta.get_fields()]\n\n\n"
+            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n"
+            "from apps.common.admin import get_model_fields\n\n\n"
             f"@admin.register({self.name.capitalize()})\n"
             f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
-            "    list_display = get_model_fields()\n"
+            f"    list_display = get_model_fields(model={self.name.capitalize()})\n"
         )
 
     def create_test(self):
@@ -124,6 +123,13 @@ class CreateFiles:
             "    updated_at = models.DateTimeField(auto_now=True)\n\n"
             "    class Meta:\n"
             "        abstract = True\n")
+        models = open("apps/common/admin.py", "w+")
+        models.write(
+            "from django.contrib import admin\n\n"
+            "from apps.common.models import BaseModel\n\n\n"
+            "def get_model_fields(model=BaseModel):\n"
+            f"    return [field.name for field in model._meta.get_fields()]\n"
+        )
 
     def main(self):
         self.create_apps()
