@@ -11,98 +11,98 @@ class CreateFiles:
     def create_serializer(self):
         serializer = open(self.path.joinpath('serializers.py'), 'w+')
         serializer.write(
-            f"from rest_framework import serializers\n\n"
+            "from rest_framework import serializers\n\n"
             f"from apps.{self.name}.models import *\n\n\n"
             f"class {self.name.capitalize()}Serializer(serializers.ModelSerializer):\n"
-            f"    class Meta:\n"
+            "    class Meta:\n"
             f"        model = {self.name.capitalize()}\n"
-            f"        fields = '__all__'\n")
+            "        fields = '__all__'\n")
 
     def create_admin(self):
         admin = open(self.path.joinpath('admin.py'), 'w+')
         admin.write(
-            f"from django.contrib import admin\n\n"
+            "from django.contrib import admin\n\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
             "def get_model_fields():\n"
             f"    return [field.name for field in {self.name.capitalize()}._meta.get_fields()]\n\n\n"
             f"@admin.register({self.name.capitalize()})\n"
             f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
-            f"    list_display = get_model_fields()\n"
+            "    list_display = get_model_fields()\n"
         )
 
     def create_test(self):
         test = open(self.path.joinpath('tests.py'), 'w+')
         test.write(
-            f"from django.test import TestCase\n"
-            f"from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n\n"
+            "from django.test import TestCase\n"
+            "from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
             f"class {self.name.capitalize()}Test(TestCase):\n"
-            f"    def setUp(self) -> None:\n"
+            "    def setUp(self) -> None:\n"
             "        pass\n\n"
             f"    def test_{self.name}_list(self):\n"
             f"        response = self.client.get('/{self.name}/{self.name}')\n"
-            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_create(self):\n"
             "        data = {}\n"
             f"        response = self.client.post('/{self.name}/{self.name}', data=data)\n"
-            f"        self.assertEqual(response.status_code, HTTP_201_CREATED)\n\n"
+            "        self.assertEqual(response.status_code, HTTP_201_CREATED)\n\n"
             f"    def test_{self.name}_retrieve(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
             f"        response = self.client.get(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
-            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_update(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
             f"        response = self.client.put(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
-            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_partial_update(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
             f"        response = self.client.patch(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
-            f"        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
+            "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_destroy(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
             f"        response = self.client.delete(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
-            f"        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)\n"
+            "        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)\n"
         )
 
     def create_urls(self):
         urls = open(self.path.joinpath('urls.py'), 'w+')
         urls.write(
-            f"from rest_framework import routers\n\n"
+            "from rest_framework import routers\n\n"
             f"from apps.{self.name}.views import {self.name.capitalize()}ViewSet\n\n"
             f"router = routers.SimpleRouter(trailing_slash=False)\n\n\n"
             f"router.register(r'{self.name}', {self.name.capitalize()}ViewSet, basename='{self.name}')\n\n"
-            f"urlpatterns = [\n    *router.urls,\n]\n")
+            "urlpatterns = [\n    *router.urls,\n]\n")
 
     def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
         view.write(
-            f"from rest_framework.viewsets import ModelViewSet\n\n"
+            "from rest_framework.viewsets import ModelViewSet\n\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n"
             f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
             f"class {self.name.capitalize()}ViewSet(ModelViewSet):\n"
             f"    serializer_class = {self.name.capitalize()}Serializer\n"
             f"    queryset = {self.name.capitalize()}.objects.all()\n"
-            f"    ordering = '-updated_at'\n"
-            f"    filterset_fields = '__all__'\n"
-            f"    search_fields = '__all__'\n"
+            "    ordering = '-updated_at'\n"
+            "    filterset_fields = '__all__'\n"
+            "    search_fields = '__all__'\n"
         )
 
     def create_model(self):
         model = open(self.path.joinpath('models.py'), 'w+')
         model.write(
-            f"from django.db import models\n\n"
-            f"from apps.common.models import BaseModel\n\n\n"
+            "from django.db import models\n\n"
+            "from apps.common.models import BaseModel\n\n\n"
             f"class {self.name.capitalize()}(BaseModel):\n"
-            f"    pass\n")
+            "    pass\n")
 
     def create_apps(self):
         os.mkdir(f"apps/{self.name}")
         os.system(f"django-admin startapp {self.name} apps/{self.name}")
         apps = open(self.path.joinpath("apps.py"), "w+")
         apps.write(
-            f"from django.apps import AppConfig\n\n\n"
+            "from django.apps import AppConfig\n\n\n"
             f"class {self.name.capitalize()}Config(AppConfig):\n"
-            f"    default_auto_field = 'django.db.models.BigAutoField'\n"
+            "    default_auto_field = 'django.db.models.BigAutoField'\n"
             f"    name = 'apps.{self.name}'\n")
 
     def add_common_app(self):
@@ -110,10 +110,10 @@ class CreateFiles:
         os.system("django-admin startapp common apps/common")
         apps = open("apps/common/apps.py", "w+")
         apps.write(
-            f"from django.apps import AppConfig\n\n\n"
-            f"class CommonConfig(AppConfig):\n"
-            f"    default_auto_field = 'django.db.models.BigAutoField'\n"
-            f"    name = 'apps.common'\n")
+            "from django.apps import AppConfig\n\n\n"
+            "class CommonConfig(AppConfig):\n"
+            "    default_auto_field = 'django.db.models.BigAutoField'\n"
+            "    name = 'apps.common'\n")
 
         models = open("apps/common/models.py", "w+")
         models.write(
@@ -143,32 +143,32 @@ class UpdateFiles:
     def update_urls(self):
         urls = open('config/urls.py', 'w+')
         urls.write(
-            f"from django.contrib import admin\n"
-            f"from django.urls import path, include\n"
-            f"from rest_framework import permissions\n"
-            f"from rest_framework_simplejwt.views import (\n"
-            f"    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
-            f")\n"
-            f"from drf_yasg.views import get_schema_view\n"
-            f"from drf_yasg import openapi\n\n"
-            f"schema_view = get_schema_view(\n"
-            f"    openapi.Info(\n"
-            f"        title='Project API',\n"
-            f"        default_version='v1',\n"
-            f"    ),\n"
-            f"    public=True,\n"
-            f"    permission_classes=(permissions.AllowAny,),\n"
-            f")\n\n"
-            f"urlpatterns = [\n"
-            f"    path('admin/', admin.site.urls),\n"
-            f"    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
-            f"         name='schema-swagger-ui'),\n"
-            f"    path('jwt/', include([\n"
-            f"        path('token/', TokenObtainPairView.as_view(), name='token_obtain-pair'),\n"
-            f"        path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),\n"
-            f"        path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),\n"
-            f"    ])),\n"
-            f"]\n")
+            "from django.contrib import admin\n"
+            "from django.urls import path, include\n"
+            "from rest_framework import permissions\n"
+            "from rest_framework_simplejwt.views import (\n"
+            "    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
+            ")\n"
+            "from drf_yasg.views import get_schema_view\n"
+            "from drf_yasg import openapi\n\n"
+            "schema_view = get_schema_view(\n"
+            "    openapi.Info(\n"
+            "        title='Project API',\n"
+            "        default_version='v1',\n"
+            "    ),\n"
+            "    public=True,\n"
+            "    permission_classes=(permissions.AllowAny,),\n"
+            ")\n\n"
+            "urlpatterns = [\n"
+            "    path('admin/', admin.site.urls),\n"
+            "    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
+            "         name='schema-swagger-ui'),\n"
+            "    path('jwt/', include([\n"
+            "        path('token/', TokenObtainPairView.as_view(), name='token_obtain-pair'),\n"
+            "        path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),\n"
+            "        path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),\n"
+            "    ])),\n"
+            "]\n")
 
     def add_installed_apps(self, apps):
         with open('config/settings.py') as settings:
