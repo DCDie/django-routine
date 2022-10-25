@@ -4,7 +4,7 @@ With *django-routine*, you can create a basic django project with a single comma
 
 ## Requirements
 
-* Python (3.9 or higher)
+* Python (3.8 or higher)
 
 ## Installation
 Install using pip
