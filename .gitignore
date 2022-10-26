@@ -128,3 +128,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Python-Tox
+apps/
+config/
+manage.py
