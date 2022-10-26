@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "django-routine-V1"
+version = "0.3.4"
+description = ""
+authors = ["ArtiomOn <artiom.carter.03@mail.ru>"]
+readme = "README.md"
+packages = [{include = "django_routine"}]
+
+[tool.poetry.dependencies]
+python = "^3.8 || ^3.9 || ^3.10 || ^3.11"
+flake8 = "^5.0.4"
+tox = "^3.26.0"
+django-routine = "0.3.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
