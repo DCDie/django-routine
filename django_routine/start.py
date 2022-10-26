@@ -26,7 +26,7 @@ class CreateFiles:
             "from apps.common.admin import get_model_fields\n\n\n"
             f"@admin.register({self.name.capitalize()})\n"
             f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
-            f"    list_display = get_model_fields(model={self.name.capitalize()})\n"
+            "    list_display = get_model_fields\n"
         )
 
     def create_test(self):
@@ -68,22 +68,31 @@ class CreateFiles:
         urls.write(
             "from rest_framework import routers\n\n"
             f"from apps.{self.name}.views import {self.name.capitalize()}ViewSet\n\n"
-            f"router = routers.SimpleRouter(trailing_slash=False)\n\n\n"
+            f"router = routers.SimpleRouter(trailing_slash=False)\n\n"
             f"router.register(r'{self.name}', {self.name.capitalize()}ViewSet, basename='{self.name}')\n\n"
             "urlpatterns = [\n    *router.urls,\n]\n")
 
     def create_views(self):
         view = open(self.path.joinpath('views.py'), 'w+')
         view.write(
+            "from rest_framework.permissions import IsAuthenticated\n"
             "from rest_framework.viewsets import ModelViewSet\n\n"
+            "from apps.common.views import CustomGenericViewSet\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n"
             f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
-            f"class {self.name.capitalize()}ViewSet(ModelViewSet):\n"
+            f"class {self.name.capitalize()}ViewSet(CustomGenericViewSet, ModelViewSet):\n"
             f"    serializer_class = {self.name.capitalize()}Serializer\n"
             f"    queryset = {self.name.capitalize()}.objects.all()\n"
+            "    permission_classes = (IsAuthenticated,)\n"
             "    ordering = '-updated_at'\n"
             "    filterset_fields = '__all__'\n"
             "    search_fields = '__all__'\n"
+            "    serializers_by_action = {\n"
+            "        'default': serializer_class,\n"
+            "    }\n"
+            "    permission_by_action = {\n"
+            "        'default': permission_classes,\n"
+            "    }\n"
         )
 
     def create_model(self):
@@ -92,7 +101,7 @@ class CreateFiles:
             "from django.db import models\n\n"
             "from apps.common.models import BaseModel\n\n\n"
             f"class {self.name.capitalize()}(BaseModel):\n"
-            "    pass\n")
+            "\tpass\n")
 
     def create_apps(self):
         os.mkdir(f"apps/{self.name}")
@@ -125,10 +134,30 @@ class CreateFiles:
             "        abstract = True\n")
         models = open("apps/common/admin.py", "w+")
         models.write(
-            "from django.contrib import admin\n\n"
-            "from apps.common.models import BaseModel\n\n\n"
-            "def get_model_fields(model=BaseModel):\n"
-            "    return [field.name for field in model._meta.get_fields()]\n"
+            "from django.contrib import admin\n\n\n"
+            "@property\n"
+            "def get_model_fields(class_obj):\n"
+            "    return [field.name for field in class_obj.model._meta.get_fields()]\n"
+        )
+        models = open("apps/common/views.py", "w+")
+        models.write(
+            "from rest_framework.viewsets import GenericViewSet\n\n"
+            "DEFAULT = 'default'\n\n\n"
+            "class CustomGenericViewSet(GenericViewSet):\n"
+            "    serializers_by_action = {}\n"
+            "    permission_by_action = {}\n"
+            "    authentication_by_action = {}\n\n\n"
+            "def get_serializer_class(self):\n"
+            "    if serializer := self.serializers_by_action.get(self.action) or"
+            " self.serializers_by_action.get(DEFAULT):\n"
+            "        return serializer\n"
+            "    return super(CustomGenericViewSet, self).get_serializer_class()\n\n\n"
+            "def get_permissions(self):\n"
+            "    if self.action in self.permission_by_action or DEFAULT in self.permission_by_action:\n"
+            "        return [permission() for permission in self.permission_by_action[self.action]]\n\n\n"
+            "def get_authenticators(self):\n"
+            "    if self.action in self.authentication_by_action or DEFAULT in self.authentication_by_action:\n"
+            "        return [authenticator() for authenticator in self.authentication_by_action[self.action]]\n"
         )
 
     def main(self):
