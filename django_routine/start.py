@@ -304,6 +304,7 @@ class UpdateFiles:
 def start():
     os.system('django-admin startproject config .')
     os.makedirs('apps', exist_ok=True)
+    open("apps/__init__.py", "w+").close()
     standard = [
         'rest_framework',
         'drf_yasg',
