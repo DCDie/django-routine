@@ -32,34 +32,47 @@ class CreateFiles:
     def create_test(self):
         test = open(self.path.joinpath('tests.py'), 'w+')
         test.write(
+            "from django.contrib.auth import get_user_model\n"
             "from django.test import TestCase\n"
-            "from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n\n"
+            "from faker import Faker\n"
+            "from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n"
+            "from rest_framework_simplejwt.tokens import RefreshToken\n\n"
             f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
+            "User = get_user_model()\n"
+            "fake = Faker()\n\n\n"
+            "def auth(user=None):\n"
+            "    refresh = RefreshToken.for_user(user)\n"
+            "    return {\n"
+            "        'HTTP_AUTHORIZATION': f'Bearer {refresh.access_token}'\n"
+            "    }\n\n\n"
             f"class {self.name.capitalize()}Test(TestCase):\n"
             "    def setUp(self) -> None:\n"
-            "        pass\n\n"
+            "        self.user = User.objects.create(\n"
+            "            username=fake.name(),\n"
+            "            password=fake.password(),\n"
+            "       )\n\n"
             f"    def test_{self.name}_list(self):\n"
-            f"        response = self.client.get('/{self.name}/{self.name}')\n"
+            f"        response = self.client.get('/{self.name}/{self.name}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_create(self):\n"
             "        data = {}\n"
-            f"        response = self.client.post('/{self.name}/{self.name}', data=data)\n"
+            f"        response = self.client.post('/{self.name}/{self.name}', data=data, **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_201_CREATED)\n\n"
             f"    def test_{self.name}_retrieve(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
-            f"        response = self.client.get(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
+            f"        response = self.client.get(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_update(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
-            f"        response = self.client.put(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
+            f"        response = self.client.put(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_partial_update(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
-            f"        response = self.client.patch(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
+            f"        response = self.client.patch(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_destroy(self):\n"
             f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
-            f"        response = self.client.delete(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}')\n"
+            f"        response = self.client.delete(f'/{self.name}/{self.name}/{{{self.name}_instance.id}}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)\n"
         )
 
@@ -269,7 +282,6 @@ class UpdateFiles:
                 settings.write(line + '\n')
 
     def add_urls(self, apps):
-
         with open('config/urls.py') as urls:
             data = urls.read()
         urls.close()
