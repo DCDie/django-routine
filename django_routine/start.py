@@ -50,6 +50,7 @@ class CreateFiles:
             "        self.user = User.objects.create(\n"
             "            username=fake.name(),\n"
             "            password=fake.password(),\n"
+            "       )\n\n"
             f"    def test_{self.name}_list(self):\n"
             f"        response = self.client.get('/{self.name}/{self.name}', **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
@@ -304,6 +305,7 @@ class UpdateFiles:
 def start():
     os.system('django-admin startproject config .')
     os.makedirs('apps', exist_ok=True)
+    open("apps/__init__.py", "w+").close()
     standard = [
         'rest_framework',
         'drf_yasg',
