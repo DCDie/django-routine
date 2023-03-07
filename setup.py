@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.1'
+version = '1.2'
 
 if __name__ == '__main__':
     setup(
@@ -22,5 +22,6 @@ if __name__ == '__main__':
             'drf_yasg',
             'djangorestframework-simplejwt',
             'django-filter',
+            'faker',
         ],
     )
