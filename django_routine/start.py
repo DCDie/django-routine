@@ -131,7 +131,8 @@ class CreateFiles:
             "    default_auto_field = 'django.db.models.BigAutoField'\n"
             f"    name = 'apps.{self.name}'\n")
 
-    def add_common_app(self):
+    @staticmethod
+    def add_common_app():
         os.mkdir("apps/common")
         os.system("django-admin startapp common apps/common")
         apps = open("apps/common/apps.py", "w+")
@@ -150,15 +151,15 @@ class CreateFiles:
             "    updated_at = models.DateTimeField(auto_now=True)\n\n"
             "    class Meta:\n"
             "        abstract = True\n")
-        models = open("apps/common/admin.py", "w+")
-        models.write(
+        admin = open("apps/common/admin.py", "w+")
+        admin.write(
             "from django.contrib import admin\n\n\n"
             "@property\n"
             "def get_model_fields(class_obj):\n"
             "    return [field.name for field in class_obj.model._meta.get_fields()]\n"
         )
-        models = open("apps/common/views.py", "w+")
-        models.write(
+        views = open("apps/common/views.py", "w+")
+        views.write(
             "from rest_framework.viewsets import GenericViewSet\n\n"
             "DEFAULT = 'default'\n\n\n"
             "class CustomGenericViewSet(GenericViewSet):\n"
@@ -178,153 +179,8 @@ class CreateFiles:
             "        return super(CustomGenericViewSet, self).get_permissions()\n"
         )
 
-    def main(self):
-        self.create_apps()
-        self.create_serializer()
-        self.create_test()
-        self.create_admin()
-        self.create_model()
-        self.create_views()
-        self.create_urls()
-
-
-class UpdateFiles:
-    def __init__(self, path=None, name=None):
-        self.path = path
-        self.name = name
-
-    def update_urls(self):
-        urls = open('config/urls.py', 'w+')
-        urls.write(
-            "from django.contrib import admin\n"
-            "from django.urls import path, include\n"
-            "from rest_framework import permissions\n"
-            "from rest_framework_simplejwt.views import (\n"
-            "    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
-            ")\n"
-            "from drf_yasg.views import get_schema_view\n"
-            "from drf_yasg import openapi\n\n"
-            "schema_view = get_schema_view(\n"
-            "    openapi.Info(\n"
-            "        title='Project API',\n"
-            "        default_version='v1',\n"
-            "    ),\n"
-            "    public=True,\n"
-            "    permission_classes=(permissions.AllowAny,),\n"
-            ")\n\n"
-            "urlpatterns = [\n"
-            "    path('admin/', admin.site.urls),\n"
-            "    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
-            "         name='schema-swagger-ui'),\n"
-            "    path('jwt/', include([\n"
-            "        path('token/', TokenObtainPairView.as_view(), name='token_obtain-pair'),\n"
-            "        path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),\n"
-            "        path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),\n"
-            "    ])),\n"
-            "]\n")
-
-    def add_installed_apps(self, apps):
-        with open('config/settings.py') as settings:
-            data = settings.read()
-        settings.close()
-
-        list = data.split('\n')
-        for i in range(len(list)):
-            if list[i] == "    'django.contrib.staticfiles',":
-                for app in apps:
-                    list.insert(i + 1, f"    \'{app}\',")
-                    i += 1
-
-        with open('config/settings.py', 'w') as settings:
-            for line in list:
-                settings.write(line + '\n')
-
-    def extend_config(self):
-        with open('config/settings.py') as settings:
-            data = settings.read()
-        settings.close()
-
-        list = data.split('\n')
-
-        for i in range(len(list)):
-            if list[i] == "from pathlib import Path":
-                list.insert(i + 1, "\nfrom datetime import timedelta\n")
-
-            if list[i] == "DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'":
-                list.insert(
-                    i + 2,
-                    "REST_FRAMEWORK = {\n"
-                    "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
-                    "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
-                    "        'rest_framework.authentication.SessionAuthentication',\n"
-                    "    ),\n"
-                    "    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',\n"
-                    "    'PAGE_SIZE': 20,\n"
-                    "    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',\n"
-                    "                                'rest_framework.filters.SearchFilter',\n"
-                    "                                'rest_framework.filters.OrderingFilter',\n"
-                    "                                ],\n"
-                    "}\n\n\n"
-                    "SIMPLE_JWT = {\n"
-                    "    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),\n"
-                    "    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),\n"
-                    "    'AUTH_HEADER_TYPES': ('Bearer',),\n"
-                    "    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',\n"
-                    " }\n\n\n"
-                    "SWAGGER_SETTINGS = {\n"
-                    "    'SECURITY_DEFINITIONS': {\n"
-                    "        'Token': {\n"
-                    "            'type': 'apiKey',\n"
-                    "            'name': 'Authorization',\n"
-                    "            'in': 'header'\n"
-                    "        }\n"
-                    "    }\n"
-                    "}\n"
-
-                )
-            if list[i] == "STATIC_URL = 'static/'":
-                list.insert(
-                    i + 1,
-                    "STATIC_ROOT = BASE_DIR.joinpath('static')\n\n"
-                    "MEDIA_URL = '/media/'\n"
-                    "MEDIA_ROOT = BASE_DIR.joinpath('media')\n"
-                )
-            if list[i] == "DATABASES = {":
-                del list[i + 2: i + 4]
-                list.insert(
-                    i + 2,
-                    "        'ENGINE': 'django.db.backends.postgresql',\n"
-                    "        'HOST': 'postgres.django.com',\n"
-                    "        'PORT': '5432',\n"
-                    "        'NAME': 'postgres',\n"
-                    "        'USER': 'postgres',\n"
-                    "        'PASSWORD': 'postgres',"
-                )
-        with open('config/settings.py', 'w') as settings:
-            for line in list:
-                settings.write(line + '\n')
-
-    def add_urls(self, apps):
-        with open('config/urls.py') as urls:
-            data = urls.read()
-        urls.close()
-
-        list = data.split('\n')
-
-        for i in range(len(list)):
-            if list[i] == 'urlpatterns = [':
-                for app in apps:
-                    list.insert(
-                        i + 1,
-                        f"    path('{app.split('.')[-1]}/', include('{app}.urls')),"
-                    )
-                    i += 1
-
-        with open('config/urls.py', 'w') as urls:
-            for line in list:
-                urls.write(line + '\n')
-
-    def add_dockerfile(self):
+    @staticmethod
+    def create_dockerfile():
         python = python_version()
         with open('Dockerfile', 'w+') as dockerfile:
             dockerfile.write(
@@ -338,7 +194,8 @@ class UpdateFiles:
                 "CMD [\"gunicorn\", \"config.wsgi:application\", \"-bind\", \"0.0.0.0:8000\"]\n"
             )
 
-    def add_docker_compose(self):
+    @staticmethod
+    def create_docker_compose():
         with open('docker-compose.yml', 'w+') as docker_compose:
             docker_compose.write(
                 "version: '3.9'\n\n"
@@ -392,6 +249,155 @@ class UpdateFiles:
                 "      - rabbitmq\n"
             )
 
+    def main(self):
+        self.create_apps()
+        self.create_serializer()
+        self.create_test()
+        self.create_admin()
+        self.create_model()
+        self.create_views()
+        self.create_urls()
+        self.create_dockerfile()
+        self.create_docker_compose()
+
+
+class UpdateFiles:
+
+    @staticmethod
+    def update_urls():
+        urls = open('config/urls.py', 'w+')
+        urls.write(
+            "from django.contrib import admin\n"
+            "from django.urls import path, include\n"
+            "from rest_framework import permissions\n"
+            "from rest_framework_simplejwt.views import (\n"
+            "    TokenObtainPairView, TokenRefreshView, TokenVerifyView\n"
+            ")\n"
+            "from drf_yasg.views import get_schema_view\n"
+            "from drf_yasg import openapi\n\n"
+            "schema_view = get_schema_view(\n"
+            "    openapi.Info(\n"
+            "        title='Project API',\n"
+            "        default_version='v1',\n"
+            "    ),\n"
+            "    public=True,\n"
+            "    permission_classes=(permissions.AllowAny,),\n"
+            ")\n\n"
+            "urlpatterns = [\n"
+            "    path('admin/', admin.site.urls),\n"
+            "    path('', schema_view.with_ui('swagger', cache_timeout=0),\n"
+            "         name='schema-swagger-ui'),\n"
+            "    path('jwt/', include([\n"
+            "        path('token/', TokenObtainPairView.as_view(), name='token_obtain-pair'),\n"
+            "        path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),\n"
+            "        path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),\n"
+            "    ])),\n"
+            "]\n")
+
+    @staticmethod
+    def add_installed_apps(apps):
+        with open('config/settings.py') as settings:
+            data = settings.read()
+        settings.close()
+
+        apps_list = data.split('\n')
+        for i, _ in enumerate(apps_list):
+            if apps_list[i] == "    'django.contrib.staticfiles',":
+                for app in apps:
+                    apps_list.insert(i + 1, f"    \'{app}\',")
+                    i += 1
+
+        with open('config/settings.py', 'w') as settings:
+            for line in apps_list:
+                settings.write(line + '\n')
+
+    @staticmethod
+    def extend_config():
+        with open('config/settings.py') as settings:
+            data = settings.read()
+        settings.close()
+
+        settings_list = data.split('\n')
+
+        for i, _ in enumerate(settings_list):
+            if settings_list[i] == "from pathlib import Path":
+                settings_list.insert(i + 1, "\nfrom datetime import timedelta\n")
+
+            if settings_list[i] == "DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'":
+                settings_list.insert(
+                    i + 2,
+                    "REST_FRAMEWORK = {\n"
+                    "    'DEFAULT_AUTHENTICATION_CLASSES': (\n"
+                    "        'rest_framework_simplejwt.authentication.JWTAuthentication',\n"
+                    "        'rest_framework.authentication.SessionAuthentication',\n"
+                    "    ),\n"
+                    "    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',\n"
+                    "    'PAGE_SIZE': 20,\n"
+                    "    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',\n"
+                    "                                'rest_framework.filters.SearchFilter',\n"
+                    "                                'rest_framework.filters.OrderingFilter',\n"
+                    "                                ],\n"
+                    "}\n\n\n"
+                    "SIMPLE_JWT = {\n"
+                    "    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),\n"
+                    "    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),\n"
+                    "    'AUTH_HEADER_TYPES': ('Bearer',),\n"
+                    "    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',\n"
+                    " }\n\n\n"
+                    "SWAGGER_SETTINGS = {\n"
+                    "    'SECURITY_DEFINITIONS': {\n"
+                    "        'Token': {\n"
+                    "            'type': 'apiKey',\n"
+                    "            'name': 'Authorization',\n"
+                    "            'in': 'header'\n"
+                    "        }\n"
+                    "    }\n"
+                    "}\n"
+
+                )
+            if settings_list[i] == "STATIC_URL = 'static/'":
+                settings_list.insert(
+                    i + 1,
+                    "STATIC_ROOT = BASE_DIR.joinpath('static')\n\n"
+                    "MEDIA_URL = '/media/'\n"
+                    "MEDIA_ROOT = BASE_DIR.joinpath('media')\n"
+                )
+            if settings_list[i] == "DATABASES = {":
+                del settings_list[i + 2: i + 4]
+                settings_list.insert(
+                    i + 2,
+                    "        'ENGINE': 'django.db.backends.postgresql',\n"
+                    "        'HOST': 'postgres.django.com',\n"
+                    "        'PORT': '5432',\n"
+                    "        'NAME': 'postgres',\n"
+                    "        'USER': 'postgres',\n"
+                    "        'PASSWORD': 'postgres',"
+                )
+        with open('config/settings.py', 'w') as settings:
+            for line in settings_list:
+                settings.write(line + '\n')
+
+    @staticmethod
+    def add_urls(apps):
+        with open('config/urls.py') as urls:
+            data = urls.read()
+        urls.close()
+
+        urls_list = data.split('\n')
+
+        for i, _ in enumerate(urls_list):
+            if urls_list[i] == 'urlpatterns = [':
+                for app in apps:
+                    urls_list.insert(
+                        i + 1,
+                        f"    path('{app.split('.')[-1]}/', include('{app}.urls')),"
+                    )
+                    i += 1
+
+        with open('config/urls.py', 'w') as urls:
+            for line in urls_list:
+                urls.write(line + '\n')
+
 
 def start():
     os.system('django-admin startproject config .')
@@ -418,6 +424,4 @@ def start():
     UpdateFiles().add_installed_apps([*standard, *apps])
     UpdateFiles().extend_config()
     UpdateFiles().add_urls(apps)
-    UpdateFiles().add_dockerfile()
-    UpdateFiles().add_docker_compose()
     os.system('echo All is done, my Captain!')
