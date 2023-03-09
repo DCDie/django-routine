@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.2'
+version = '1.2.19'
 
 if __name__ == '__main__':
     setup(
@@ -23,5 +23,7 @@ if __name__ == '__main__':
             'djangorestframework-simplejwt',
             'django-filter',
             'faker',
+            'gunicorn',
+            'psycopg2-binary',
         ],
     )
