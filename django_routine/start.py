@@ -374,7 +374,7 @@ class UpdateFiles:
                 "      - \"5672:5672\"\n"
                 "      - \"15672:15672\"\n"
                 "  django:\n"
-                "    container_name: django\n"  
+                "    container_name: django\n"
                 "    build:\n"
                 "      context: .\n"
                 "      dockerfile: Dockerfile\n"
