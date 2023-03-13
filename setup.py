@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.3.0'
+version = '1.3.1'
 
 if __name__ == '__main__':
     setup(
@@ -25,5 +25,8 @@ if __name__ == '__main__':
             'faker',
             'gunicorn',
             'psycopg2-binary',
+            'django-celery-beat',
+            'django-celery-results',
+            'python-dotenv',
         ],
     )

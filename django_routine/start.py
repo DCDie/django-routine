@@ -200,41 +200,43 @@ class CreateFiles:
             docker_compose.write(
                 "version: '3.9'\n\n"
                 "volumes:\n"
-                "  rabbitmq:\n"
-                "    name: rabbitmq\n"
-                "  postgres:\n"
-                "    name: postgres\n\n"
+                "  django_postgres:\n"
+                "    name: django_postgres\n"
+                "  django_rabbitmq:\n"
+                "    name: django_rabbitmq\n\n"
                 "services:\n"
                 "  postgres:\n"
-                "    container_name: postgres\n"
+                "    container_name: config_postgres\n"
                 "    hostname: postgres.django.com\n"
                 "    image: postgres:latest\n"
                 "    environment:\n"
-                "      - POSTGRES_USER=postgres\n"
-                "      - POSTGRES_PASSWORD=postgres\n"
-                "      - POSTGRES_DB=postgres\n"
+                "      POSTGRES_DB: ${POSTGRES_DB}\n"
+                "      POSTGRES_USER: ${POSTGRES_USER}\n"
+                "      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n"
                 "    volumes:\n"
-                "      - postgres:/var/lib/postgresql/data\n"
+                "      - django_postgres:/var/lib/postgresql/data\n"
                 "    ports:\n"
-                "      - \"5432:5432\"\n"
+                "      - \"5432:5432\"\n\n"
                 "  rabbitmq:\n"
-                "    container_name: rabbitmq\n"
+                "    container_name: config_rabbitmq\n"
                 "    hostname: rabbitmq.django.com\n"
                 "    image: rabbitmq:latest\n"
                 "    environment:\n"
-                "      - RABBITMQ_DEFAULT_USER=rabbitmq\n"
-                "      - RABBITMQ_DEFAULT_PASS=rabbitmq\n"
-                "      - RABBITMQ_DEFAULT_VHOST=rabbitmq\n"
-                "    volumes:\n"
-                "      - rabbitmq:/var/lib/rabbitmq\n"
+                "      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}\n"
+                "      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}\n"
+                "      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}\n"
                 "    ports:\n"
                 "      - \"5672:5672\"\n"
                 "      - \"15672:15672\"\n"
+                "    volumes:\n"
+                "      - django_rabbitmq:/var/lib/rabbitmq\n\n"
                 "  django:\n"
-                "    container_name: django\n"
+                "    container_name: config_django\n"
                 "    build:\n"
                 "      context: .\n"
                 "      dockerfile: Dockerfile\n"
+                "    env_file:\n"
+                "      - .env\n"
                 "    command:\n"
                 "      - bash\n"
                 "      - -c\n"
@@ -246,7 +248,67 @@ class CreateFiles:
                 "      - \"8000:8000\"\n"
                 "    depends_on:\n"
                 "      - postgres\n"
-                "      - rabbitmq\n"
+                "      - rabbitmq\n\n"
+                "  celery_beat:\n"
+                "      container_name: config_celery_beat\n"
+                "      build:\n"
+                "        context: .\n"
+                "        dockerfile: Dockerfile\n"
+                "      env_file:\n"
+                "        - .env\n"
+                "      command: celery -A config.celery:app beat -l INFO\n"
+                "      depends_on:\n"
+                "        - postgres\n"
+                "        - rabbitmq\n\n"
+                "  celery_worker:\n"
+                "      container_name: config_celery_worker\n"
+                "      build:\n"
+                "        context: .\n"
+                "        dockerfile: Dockerfile\n"
+                "      env_file:\n"
+                "        - .env\n"
+                "      command: celery -A config.celery:app worker -l INFO\n"
+                "      depends_on:\n"
+                "        - postgres\n"
+                "        - rabbitmq\n"
+            )
+
+    @staticmethod
+    def create_env():
+        with open('.env', 'w+') as local_env:
+            local_env.write(
+                "SECRET_KEY=\n\n"
+                "POSTGRES_HOST=postgres.django.com\n"
+                "POSTGRES_PORT=5432\n"
+                "POSTGRES_DB=postgres\n"
+                "POSTGRES_USER=postgres\n"
+                "POSTGRES_PASSWORD=postgres\n\n"
+                "RABBITMQ_HOST=rabbitmq.django.com\n"
+                "RABBITMQ_PORT=5672\n"
+                "RABBITMQ_USER=rabbitmq\n"
+                "RABBITMQ_PASS=rabbitmq\n"
+                "RABBITMQ_VHOST=rabbitmq\n\n"
+            )
+
+    @staticmethod
+    def create_celery_file():
+        with open("config/celery.py", "w+") as celery_file:
+            celery_file.write(
+                "import os\n"
+                "from time import sleep\n\n"
+                "from celery import Celery\n\n"
+                "os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')\n\n"
+                "app = Celery('config')\n"
+                "app.config_from_object('django.conf:settings', namespace='CELERY')\n"
+                "app.conf.timezone = 'UTC'\n"
+                "app.autodiscover_tasks()\n\n\n"
+                "@app.task(name='debug_task', bind=True, track_started=True)\n"
+                "def debug_task(self, sleep_seconds: int = 0, raise_exception: bool = False):\n"
+                "    if sleep_seconds:\n"
+                "        sleep(sleep_seconds)\n"
+                "    if raise_exception:\n"
+                "        raise Exception('Intentional exception')\n"
+                "    print(f'Request: {self.request!r}')\n"
             )
 
     def main(self):
@@ -259,6 +321,8 @@ class CreateFiles:
         self.create_urls()
         self.create_dockerfile()
         self.create_docker_compose()
+        self.create_env()
+        self.create_celery_file()
 
 
 class UpdateFiles:
@@ -321,7 +385,20 @@ class UpdateFiles:
 
         for i, _ in enumerate(settings_list):
             if settings_list[i] == "from pathlib import Path":
-                settings_list.insert(i + 1, "\nfrom datetime import timedelta\n")
+                settings_list.insert(
+                    i + 1,
+                    "\nfrom datetime import timedelta\n"
+                    "from os import environ\n"
+                    "from dotenv import load_dotenv\n\n"
+                    "load_dotenv()\n"
+                )
+
+            if settings_list[i] == "# SECURITY WARNING: keep the secret key used in production secret!":
+                del settings_list[i + 1]
+                settings_list.insert(
+                    i + 1,
+                    "SECRET_KEY = environ.get('SECRET_KEY')\n"
+                )
 
             if settings_list[i] == "DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'":
                 settings_list.insert(
@@ -367,11 +444,25 @@ class UpdateFiles:
                 settings_list.insert(
                     i + 2,
                     "        'ENGINE': 'django.db.backends.postgresql',\n"
-                    "        'HOST': 'postgres.django.com',\n"
-                    "        'PORT': '5432',\n"
-                    "        'NAME': 'postgres',\n"
-                    "        'USER': 'postgres',\n"
-                    "        'PASSWORD': 'postgres',"
+                    "        'HOST': environ.get('POSTGRES_HOST'),\n"
+                    "        'PORT': environ.get('POSTGRES_PORT'),\n"
+                    "        'NAME': environ.get('POSTGRES_DB'),\n"
+                    "        'USER': environ.get('POSTGRES_USER'),\n"
+                    "        'PASSWORD': environ.get('POSTGRES_PASSWORD'),"
+                )
+            if settings_list[i] == "USE_TZ = True":
+                settings_list.insert(
+                    i + 2,
+                    "RABBITMQ_HOST = environ.get('RABBITMQ_HOST')\n"
+                    "RABBITMQ_PORT = environ.get('RABBITMQ_PORT')\n"
+                    "RABBITMQ_USER = environ.get('RABBITMQ_USER')\n"
+                    "RABBITMQ_PASS = environ.get('RABBITMQ_PASS')\n"
+                    "RABBITMQ_VHOST = environ.get('RABBITMQ_VHOST')\n\n"
+                    "CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:"
+                    "{RABBITMQ_PORT}/{RABBITMQ_VHOST}'\n\n"
+                    "CELERY_RESULT_BACKEND = 'django-db'\n\n"
+                    "CELERY_RESULT_EXTENDED = True\n\n"
+                    "CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'\n"
                 )
         with open('config/settings.py', 'w') as settings:
             for line in settings_list:
@@ -398,6 +489,14 @@ class UpdateFiles:
             for line in urls_list:
                 urls.write(line + '\n')
 
+    @staticmethod
+    def update_config_init():
+        with open('config/__init__.py', 'w+') as config:
+            config.write(
+                "__all__ = ['celery_app']\n\n"
+                "from config.celery import app as celery_app\n"
+            )
+
 
 def start():
     os.system('django-admin startproject config .')
@@ -410,6 +509,8 @@ def start():
         'rest_framework_swagger',
         'rest_framework_simplejwt',
         'django_filters',
+        'django_celery_beat',
+        'django_celery_results',
         'apps.common'
     ]
     apps = []
@@ -424,4 +525,5 @@ def start():
     UpdateFiles().add_installed_apps([*standard, *apps])
     UpdateFiles().extend_config()
     UpdateFiles().add_urls(apps)
+    UpdateFiles().update_config_init()
     os.system('echo All is done, my Captain!')
