@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 from platform import python_version
+from typing import List
 
 
 class CreateFiles:
@@ -357,21 +358,33 @@ class UpdateFiles:
             "]\n")
 
     @staticmethod
-    def add_installed_apps(apps):
-        with open('config/settings.py') as settings:
-            data = settings.read()
-        settings.close()
+    def add_installed_apps(third_party_apps: List[str], local_apps: List[str]):
+        # Read the content of the settings.py file
+        with open('config/settings.py') as f:
+            content = f.read()
 
-        apps_list = data.split('\n')
-        for i, _ in enumerate(apps_list):
-            if apps_list[i] == "    'django.contrib.staticfiles',":
-                for app in apps:
-                    apps_list.insert(i + 1, f"    \'{app}\',")
-                    i += 1
+        # Find the start and end of the 'INSTALLED_APPS' section
+        start_index = content.find('INSTALLED_APPS') + 19
+        end_index = content.find(']', start_index) - 1
 
-        with open('config/settings.py', 'w') as settings:
-            for line in apps_list:
-                settings.write(line + '\n')
+        # Extract the current INSTALLED_APPS
+        current_apps = content[start_index:end_index].split('\n')
+
+        # Create the new INSTALLED_APPS
+        third_party_apps_list = []
+        local_apps_list = []
+
+        third_party_apps_list += [f"    '{app}'," for app in third_party_apps]
+        local_apps_list += [f"    '{app}'," for app in local_apps]
+
+        # Combine the new content and write it back to the file
+        new_content = content[:start_index] + \
+                      '    # Django apps\n' + '\n'.join(current_apps) + '\n' + \
+                      '    # Third-party apps\n' + '\n'.join(third_party_apps_list) + '\n' + \
+                      '    # Local apps\n' + '\n'.join(local_apps_list) + \
+                      content[end_index:]
+        with open('config/settings.py', 'w') as f:
+            f.write(new_content)
 
     @staticmethod
     def extend_config():
@@ -497,11 +510,18 @@ class UpdateFiles:
 
 
 def start():
+    # Create a new Django project in the current directory
     os.system('django-admin startproject config .')
+
+    # Save a list of installed packages to requirements.txt
     os.system('pip freeze > requirements.txt')
+
+    # Create a directory for the custom apps and an empty __init__.py file
     os.makedirs('apps', exist_ok=True)
-    open("apps/__init__.py", "w+").close()
-    standard = [
+    Path('apps/__init__.py').touch()
+
+    # Define a list of standard packages and an empty list for custom apps
+    third_party_apps = [
         'rest_framework',
         'drf_yasg',
         'rest_framework_swagger',
@@ -509,19 +529,28 @@ def start():
         'django_filters',
         'django_celery_beat',
         'django_celery_results',
-        'apps.common'
     ]
-    apps = []
+    local_apps = [
+        'apps.common',
+    ]
+
+    # Update the project's URLs file and add a common app
     UpdateFiles().update_urls()
     CreateFiles().add_common_app()
-    if len(sys.argv):
-        for arg in sys.argv:
-            if arg != sys.argv[0]:
-                path = Path('apps').absolute().joinpath(arg)
-                CreateFiles(path=path, name=arg).main()
-                apps.append(f"apps.{arg}")
-    UpdateFiles().add_installed_apps([*standard, *apps])
+
+    # Add any custom apps specified as command-line arguments
+    if len(sys.argv) > 1:
+        for arg in sys.argv[1:]:
+            # Create a directory for the app and generate its files
+            app_path = Path('apps').joinpath(arg)
+            CreateFiles(path=app_path, name=arg).main()
+            local_apps.append(f"apps.{arg}")
+
+    # Update various files with the list of installed apps
+    UpdateFiles().add_installed_apps(third_party_apps, local_apps)
     UpdateFiles().extend_config()
-    UpdateFiles().add_urls(apps)
+    UpdateFiles().add_urls(local_apps)
     UpdateFiles().update_config_init()
-    os.system('echo All is done, my Captain!')
+
+    # Print a completion message
+    print('All done, Captain!')
