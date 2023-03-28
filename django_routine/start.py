@@ -7,26 +7,27 @@ from platform import python_version
 class CreateFiles:
     def __init__(self, path=None, name=None):
         self.path = path
-        self.name = name
+        self.name = name.lower()
+        self.capitalized_name = self.name.capitalize()
 
     def create_serializer(self):
         serializer = open(self.path.joinpath('serializers.py'), 'w+')
         serializer.write(
             "from rest_framework import serializers\n\n"
             f"from apps.{self.name}.models import *\n\n\n"
-            f"class {self.name.capitalize()}Serializer(serializers.ModelSerializer):\n"
+            f"class {self.capitalized_name}Serializer(serializers.ModelSerializer):\n"
             "    class Meta:\n"
-            f"        model = {self.name.capitalize()}\n"
+            f"        model = {self.capitalized_name}\n"
             "        fields = '__all__'\n")
 
     def create_admin(self):
         admin = open(self.path.joinpath('admin.py'), 'w+')
         admin.write(
             "from django.contrib import admin\n\n"
-            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n"
+            f"from apps.{self.name}.models import {self.capitalized_name}\n\n"
             "from apps.common.admin import get_model_fields\n\n\n"
-            f"@admin.register({self.name.capitalize()})\n"
-            f"class {self.name.capitalize()}Admin(admin.ModelAdmin):\n"
+            f"@admin.register({self.capitalized_name})\n"
+            f"class {self.capitalized_name}Admin(admin.ModelAdmin):\n"
             "    list_display = get_model_fields\n"
         )
 
@@ -39,7 +40,7 @@ class CreateFiles:
             "from faker import Faker\n"
             "from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT\n"
             "from rest_framework_simplejwt.tokens import RefreshToken\n\n"
-            f"from apps.{self.name}.models import {self.name.capitalize()}\n\n\n"
+            f"from apps.{self.name}.models import {self.capitalized_name}\n\n\n"
             "User = get_user_model()\n"
             "fake = Faker()\n\n\n"
             "def auth(user=None):\n"
@@ -47,7 +48,7 @@ class CreateFiles:
             "    return {\n"
             "        'HTTP_AUTHORIZATION': f'Bearer {refresh.access_token}'\n"
             "    }\n\n\n"
-            f"class {self.name.capitalize()}Test(TestCase):\n"
+            f"class {self.capitalized_name}Test(TestCase):\n"
             "    def setUp(self) -> None:\n"
             "        self.user = User.objects.create(\n"
             "            username=fake.name(),\n"
@@ -60,22 +61,22 @@ class CreateFiles:
             f"        response = self.client.post(reverse('{self.name}-list'), **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_201_CREATED)\n\n"
             f"    def test_{self.name}_retrieve(self):\n"
-            f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
+            f"        {self.name}_instance = {self.capitalized_name}.objects.create()\n"
             f"        response = self.client.get(reverse('{self.name}-detail', "
             f"kwargs={{'pk': {self.name}_instance.id}}), **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_update(self):\n"
-            f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
+            f"        {self.name}_instance = {self.capitalized_name}.objects.create()\n"
             f"        response = self.client.put(reverse('{self.name}-detail', "
             f"kwargs={{'pk': {self.name}_instance.id}}), **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_partial_update(self):\n"
-            f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
+            f"        {self.name}_instance = {self.capitalized_name}.objects.create()\n"
             f"        response = self.client.patch(reverse('{self.name}-detail', "
             f"kwargs={{'pk': {self.name}_instance.id}}), **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_200_OK)\n\n"
             f"    def test_{self.name}_destroy(self):\n"
-            f"        {self.name}_instance = {self.name.capitalize()}.objects.create()\n"
+            f"        {self.name}_instance = {self.capitalized_name}.objects.create()\n"
             f"        response = self.client.delete(reverse('{self.name}-detail', "
             f"kwargs={{'pk': {self.name}_instance.id}}), **auth(user=self.user))\n"
             "        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)\n"
@@ -85,9 +86,9 @@ class CreateFiles:
         urls = open(self.path.joinpath('urls.py'), 'w+')
         urls.write(
             "from rest_framework import routers\n\n"
-            f"from apps.{self.name}.views import {self.name.capitalize()}ViewSet\n\n"
+            f"from apps.{self.name}.views import {self.capitalized_name}ViewSet\n\n"
             f"router = routers.SimpleRouter(trailing_slash=False)\n\n"
-            f"router.register(r'{self.name}', {self.name.capitalize()}ViewSet, basename='{self.name}')\n\n"
+            f"router.register(r'{self.name}', {self.capitalized_name}ViewSet, basename='{self.name}')\n\n"
             "urlpatterns = [\n    *router.urls,\n]\n")
 
     def create_views(self):
@@ -96,11 +97,11 @@ class CreateFiles:
             "from rest_framework.permissions import IsAuthenticated\n"
             "from rest_framework.viewsets import ModelViewSet\n\n"
             "from apps.common.views import CustomGenericViewSet\n"
-            f"from apps.{self.name}.models import {self.name.capitalize()}\n"
-            f"from apps.{self.name}.serializers import {self.name.capitalize()}Serializer\n\n\n"
-            f"class {self.name.capitalize()}ViewSet(CustomGenericViewSet, ModelViewSet):\n"
-            f"    serializer_class = {self.name.capitalize()}Serializer\n"
-            f"    queryset = {self.name.capitalize()}.objects.all()\n"
+            f"from apps.{self.name}.models import {self.capitalized_name}\n"
+            f"from apps.{self.name}.serializers import {self.capitalized_name}Serializer\n\n\n"
+            f"class {self.capitalized_name}ViewSet(CustomGenericViewSet, ModelViewSet):\n"
+            f"    serializer_class = {self.capitalized_name}Serializer\n"
+            f"    queryset = {self.capitalized_name}.objects.all()\n"
             "    permission_classes = (IsAuthenticated,)\n"
             "    ordering = '-updated_at'\n"
             "    filterset_fields = '__all__'\n"
@@ -118,7 +119,7 @@ class CreateFiles:
         model.write(
             "from django.db import models\n\n"
             "from apps.common.models import BaseModel\n\n\n"
-            f"class {self.name.capitalize()}(BaseModel):\n"
+            f"class {self.capitalized_name}(BaseModel):\n"
             "\tpass\n")
 
     def create_apps(self):
@@ -127,7 +128,7 @@ class CreateFiles:
         apps = open(self.path.joinpath("apps.py"), "w+")
         apps.write(
             "from django.apps import AppConfig\n\n\n"
-            f"class {self.name.capitalize()}Config(AppConfig):\n"
+            f"class {self.capitalized_name}Config(AppConfig):\n"
             "    default_auto_field = 'django.db.models.BigAutoField'\n"
             f"    name = 'apps.{self.name}'\n")
 
@@ -166,17 +167,14 @@ class CreateFiles:
             "    serializers_by_action = {}\n"
             "    permission_by_action = {}\n\n"
             "    def get_serializer_class(self):\n"
-            "        if serializer := self.serializers_by_action.get(self.action) or "
-            "self.serializers_by_action.get(DEFAULT):\n"
-            "            return serializer\n"
-            "        return super(CustomGenericViewSet, self).get_serializer_class()\n\n"
+            "        return self.serializers_by_action.get(\n"
+            "            self.action, \n"
+            "            self.serializers_by_action.get(DEFAULT)\n"
+            "        ) or super().get_serializer_class()\n\n"
             "    def get_permissions(self):\n"
-            "        if self.action in self.permission_by_action or DEFAULT in self.permission_by_action:\n"
-            "            try:\n"
-            "                return [permission() for permission in self.permission_by_action[self.action]]\n"
-            "            except KeyError:\n"
-            "                return [permission() for permission in self.permission_by_action[DEFAULT]]\n"
-            "        return super(CustomGenericViewSet, self).get_permissions()\n"
+            "        permissions = self.permission_by_action.get(self.action, []) or "
+            "self.permission_by_action.get(DEFAULT, [])\n"
+            "        return [permission() for permission in permissions] or super().get_permissions()\n"
         )
 
     @staticmethod
