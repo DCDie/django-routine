@@ -7,8 +7,8 @@ from platform import python_version
 class CreateFiles:
     def __init__(self, path=None, name=None):
         self.path = path
-        self.name = name.lower()
-        self.capitalized_name = self.name.capitalize()
+        self.name = name.lower() if name else None
+        self.capitalized_name = self.name.capitalize() if self.name else None
 
     def create_serializer(self):
         serializer = open(self.path.joinpath('serializers.py'), 'w+')
