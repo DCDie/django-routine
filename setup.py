@@ -12,7 +12,7 @@ if __name__ == '__main__':
         packages=['django_routine'],
         entry_points={
             "console_scripts": [
-                "startproject = django_routine.start:start",
+                "startproject = django_routine.main:main",
             ]
         },
         install_requires=[
